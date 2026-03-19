@@ -17,6 +17,19 @@ import decisionsRoutes from './routes/decisions.routes';
 import habitsRoutes from './routes/habits.routes';
 import habitLogsRoutes from './routes/habit-logs.routes';
 import dsaaRoutes from './routes/dsaa.routes';
+import remindersRoutes from './routes/reminders.routes';
+import aiRoutes from './routes/ai.routes';
+import trendsRoutes from './routes/trends.routes';
+import notificationsRoutes from './routes/notifications.routes';
+
+// Job workers
+import { startReminderWorker } from './jobs/reminder.job';
+import { startWeeklySummaryWorker } from './jobs/weekly-summary.job';
+import { startTrendAggregateWorker } from './jobs/trend-aggregate.job';
+import { startStreakCalculatorWorker } from './jobs/streak-calculator.job';
+
+// Scheduler
+import { initScheduler } from './services/scheduler.service';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,12 +55,29 @@ app.use('/api/weekly-sheets/:sheetId/decisions', decisionsRoutes);
 app.use('/api/habits', habitsRoutes);
 app.use('/api/habit-logs', habitLogsRoutes);
 app.use('/api/dsaa', dsaaRoutes);
+app.use('/api/reminders', remindersRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/trends', trendsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Global error handler
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+// Start server + background workers
+app.listen(PORT, async () => {
   console.log(`CLAWBOT API running on port ${PORT}`);
+
+  // Initialize BullMQ workers and scheduler
+  try {
+    startReminderWorker();
+    startWeeklySummaryWorker();
+    startTrendAggregateWorker();
+    startStreakCalculatorWorker();
+    await initScheduler();
+    console.log('[Workers] All job workers started');
+  } catch (err) {
+    console.warn('[Workers] Failed to start (Redis may not be available):', (err as Error).message);
+  }
 });
 
 export default app;
