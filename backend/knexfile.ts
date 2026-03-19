@@ -2,6 +2,7 @@ import type { Knex } from 'knex';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '../.env' });
+dotenv.config(); // also check local .env
 
 const config: { [key: string]: Knex.Config } = {
   development: {

@@ -19,10 +19,11 @@ RUN apk add --no-cache wget
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm install ts-node typescript @types/node
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/tsconfig.json ./
 COPY knexfile.ts ./
 
 EXPOSE 3000
