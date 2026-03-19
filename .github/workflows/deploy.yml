@@ -1,0 +1,22 @@
+name: Deploy to Aliyun ECS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /home/admin/AIEM
+            git pull origin main
+            sudo docker compose down
+            sudo docker compose up -d --build
+            echo "Deployed at $(date)"
