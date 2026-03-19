@@ -4,8 +4,8 @@ import Combine
 @MainActor
 class DashboardViewModel: ObservableObject {
     @Published var dashboardData: DashboardData?
-    @Published var isLoading: Bool = false
-    @Published var error: String?
+    @Published var isLoading: Bool = true
+    @Published var errorMessage: String?
     @Published var currentSheet: WeeklySheet?
     @Published var dsaaStreak: Int = 0
     @Published var todayHabitsCompleted: Int = 0
@@ -18,7 +18,7 @@ class DashboardViewModel: ObservableObject {
 
     func loadDashboard() async {
         isLoading = true
-        error = nil
+        errorMessage = nil
 
         do {
             let data: DashboardData = try await api.getDashboardData()
@@ -30,7 +30,7 @@ class DashboardViewModel: ObservableObject {
             aiCoachingNote = data.aiCoachingNote
             upcomingReminders = data.upcomingReminders
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
 
             // Fall back to cached data
             if let cachedSheet = syncService.getCachedSheetIfOffline() {
@@ -43,5 +43,9 @@ class DashboardViewModel: ObservableObject {
 
     func refreshData() async {
         await loadDashboard()
+    }
+
+    func retry() {
+        Task { await loadDashboard() }
     }
 }

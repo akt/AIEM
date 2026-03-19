@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -17,6 +18,8 @@ import com.emops.app.ui.screens.ai.AiCoachScreen
 import com.emops.app.ui.screens.dashboard.DashboardScreen
 import com.emops.app.ui.screens.dsaa.DsaaRitualScreen
 import com.emops.app.ui.screens.habits.HabitsScreen
+import com.emops.app.ui.screens.onboarding.OnboardingConfig
+import com.emops.app.ui.screens.onboarding.OnboardingScreen
 import com.emops.app.ui.screens.settings.SettingsScreen
 import com.emops.app.ui.screens.trends.TrendsScreen
 import com.emops.app.ui.screens.weekly.WeeklySheetScreen
@@ -33,16 +36,19 @@ sealed class Screen(val route: String, val title: String, val icon: ImageVector,
 sealed class SubScreen(val route: String) {
     data object Settings : SubScreen("settings")
     data object DsaaRitual : SubScreen("dsaa_ritual")
+    data object Onboarding : SubScreen("onboarding")
 }
 
 @Composable
 fun EMOpsNavGraph() {
     val navController = rememberNavController()
     val bottomScreens = listOf(Screen.Home, Screen.Sheet, Screen.Habits, Screen.Trends, Screen.AI)
+    var hasCompletedOnboarding by rememberSaveable { mutableStateOf(false) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val showBottomBar = bottomScreens.any { it.route == currentDestination?.route }
+    val startDestination = if (hasCompletedOnboarding) Screen.Home.route else SubScreen.Onboarding.route
 
     Scaffold(
         containerColor = EMOps_Background,
@@ -93,9 +99,19 @@ fun EMOpsNavGraph() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(SubScreen.Onboarding.route) {
+                OnboardingScreen(
+                    onComplete = { _: OnboardingConfig ->
+                        hasCompletedOnboarding = true
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(SubScreen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Screen.Home.route) {
                 DashboardScreen(
                     onNavigateToSettings = { navController.navigate(SubScreen.Settings.route) }

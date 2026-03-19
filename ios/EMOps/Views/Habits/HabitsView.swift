@@ -12,40 +12,76 @@ struct HabitsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header
-                    headerSection
-
-                    // Progress bar
-                    progressSection
-
-                    // Grouped habits by category
-                    ForEach(HabitCategory.allCases, id: \.self) { category in
-                        if let habits = viewModel.groupedHabits[category], !habits.isEmpty {
-                            categorySection(category: category, habits: habits)
-                        }
+            Group {
+                if viewModel.isLoading && viewModel.habits.isEmpty {
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                            .tint(Color(hex: 0x6C8CFF))
+                        Spacer()
                     }
-
-                    // Add Custom Habit button
-                    Button {
-                        showingAddHabit = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("Add Custom Habit")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x0F1117).ignoresSafeArea())
+                } else if let errorMessage = viewModel.errorMessage, viewModel.habits.isEmpty {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(Color(hex: 0xFFB84D))
+                        Text("Something went wrong")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: 0xE8ECF4))
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundColor(Color(hex: 0x8B95A8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        Button("Retry") {
+                            viewModel.retry()
                         }
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color(hex: 0x6C8CFF))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(hex: 0x6C8CFF).opacity(0.12))
-                        .cornerRadius(12)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color(hex: 0x6C8CFF))
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x0F1117).ignoresSafeArea())
+                } else {
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            // Header
+                            headerSection
+
+                            // Progress bar
+                            progressSection
+
+                            // Grouped habits by category
+                            ForEach(HabitCategory.allCases, id: \.self) { category in
+                                if let habits = viewModel.groupedHabits[category], !habits.isEmpty {
+                                    categorySection(category: category, habits: habits)
+                                }
+                            }
+
+                            // Add Custom Habit button
+                            Button {
+                                showingAddHabit = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Add Custom Habit")
+                                }
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(Color(hex: 0x6C8CFF))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color(hex: 0x6C8CFF).opacity(0.12))
+                                .cornerRadius(12)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 24)
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
             }
             .background(Color(hex: 0x0F1117).ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -55,12 +91,6 @@ struct HabitsView: View {
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(Color(hex: 0xE8ECF4))
-                }
-            }
-            .overlay {
-                if viewModel.isLoading && viewModel.habits.isEmpty {
-                    ProgressView()
-                        .tint(Color(hex: 0x6C8CFF))
                 }
             }
             .sheet(isPresented: $showingAddHabit) {

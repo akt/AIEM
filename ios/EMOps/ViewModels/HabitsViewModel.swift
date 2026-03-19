@@ -5,8 +5,8 @@ import Combine
 class HabitsViewModel: ObservableObject {
     @Published var habits: [Habit] = []
     @Published var habitLogs: [String: HabitLog] = [:]
-    @Published var isLoading: Bool = false
-    @Published var error: String?
+    @Published var isLoading: Bool = true
+    @Published var errorMessage: String?
     @Published var selectedDate: Date = Date()
     @Published var completedCount: Int = 0
     @Published var totalCount: Int = 0
@@ -27,21 +27,25 @@ class HabitsViewModel: ObservableObject {
 
     func loadHabits() async {
         isLoading = true
-        error = nil
+        errorMessage = nil
 
         do {
             habits = try await api.getHabits()
             await loadLogsForDate(selectedDate)
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
 
         isLoading = false
     }
 
+    func retry() {
+        Task { await loadHabits() }
+    }
+
     func loadLogsForDate(_ date: Date) async {
         let dateString = dateFormatter.string(from: date)
-        error = nil
+        errorMessage = nil
 
         do {
             let logs = try await api.getHabitLogs(date: dateString)
@@ -52,14 +56,14 @@ class HabitsViewModel: ObservableObject {
             habitLogs = logMap
             updateCounts()
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
     }
 
     // MARK: - Habit Actions
 
     func toggleHabit(_ habit: Habit) async {
-        error = nil
+        errorMessage = nil
         let dateString = dateFormatter.string(from: selectedDate)
 
         let existingLog = habitLogs[habit.id]
@@ -78,12 +82,12 @@ class HabitsViewModel: ObservableObject {
             habitLogs[habit.id] = log
             updateCounts()
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
     }
 
     func logHabitValue(_ habit: Habit, _ value: Double) async {
-        error = nil
+        errorMessage = nil
         let dateString = dateFormatter.string(from: selectedDate)
         let isCompleted = value >= habit.targetValue
 
@@ -100,7 +104,7 @@ class HabitsViewModel: ObservableObject {
             habitLogs[habit.id] = log
             updateCounts()
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
     }
 
@@ -114,7 +118,7 @@ class HabitsViewModel: ObservableObject {
         reminderTime: String?,
         reminderEnabled: Bool
     ) async {
-        error = nil
+        errorMessage = nil
 
         let body = CreateHabitBody(
             name: name,
@@ -132,12 +136,12 @@ class HabitsViewModel: ObservableObject {
             habits.append(habit)
             updateCounts()
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
     }
 
     func deleteHabit(id: String) async {
-        error = nil
+        errorMessage = nil
 
         do {
             try await api.deleteHabit(id: id)
@@ -145,7 +149,7 @@ class HabitsViewModel: ObservableObject {
             habitLogs.removeValue(forKey: id)
             updateCounts()
         } catch {
-            self.error = error.localizedDescription
+            self.errorMessage = error.localizedDescription
         }
     }
 

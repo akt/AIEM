@@ -50,45 +50,49 @@ class DashboardViewModel @Inject constructor(
 
     fun loadDashboard() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-            val today = LocalDate.now()
-            val weekNum = today.get(WeekFields.ISO.weekOfWeekBasedYear())
-            val year = today.year
-            val weekLabel = "Week $weekNum, $year"
+            try {
+                val today = LocalDate.now()
+                val weekNum = today.get(WeekFields.ISO.weekOfWeekBasedYear())
+                val year = today.year
+                val weekLabel = "Week $weekNum, $year"
 
-            _uiState.update { it.copy(weekLabel = weekLabel) }
+                _uiState.update { it.copy(weekLabel = weekLabel) }
 
-            // Load current sheet
-            weeklySheetRepository.getCurrentSheet()
-                .onSuccess { sheet ->
-                    _uiState.update {
-                        it.copy(
-                            constraintStatement = sheet.constraintStatement,
-                            errorBudgetStatus = sheet.constraintErrorBudgetStatus,
-                            dsaaFocus = sheet.dsaaFocusThisWeek,
-                            outcomes = sheet.outcomes,
-                            aiCoachingNote = sheet.aiCoachingNotes ?: "Start your day with the DSAA ritual. Focus on simplifying one process today.",
-                            dsaaStreak = 14 // placeholder - would come from stats endpoint
-                        )
+                // Load current sheet
+                weeklySheetRepository.getCurrentSheet()
+                    .onSuccess { sheet ->
+                        _uiState.update {
+                            it.copy(
+                                constraintStatement = sheet.constraintStatement,
+                                errorBudgetStatus = sheet.constraintErrorBudgetStatus,
+                                dsaaFocus = sheet.dsaaFocusThisWeek,
+                                outcomes = sheet.outcomes,
+                                aiCoachingNote = sheet.aiCoachingNotes ?: "Start your day with the DSAA ritual. Focus on simplifying one process today.",
+                                dsaaStreak = 14 // placeholder - would come from stats endpoint
+                            )
+                        }
                     }
-                }
-                .onFailure { e ->
-                    _uiState.update {
-                        it.copy(
-                            aiCoachingNote = "Start your day with the DSAA ritual. Focus on simplifying one process today.",
-                            dsaaStreak = 0
-                        )
+                    .onFailure { e ->
+                        _uiState.update {
+                            it.copy(
+                                aiCoachingNote = "Start your day with the DSAA ritual. Focus on simplifying one process today.",
+                                dsaaStreak = 0
+                            )
+                        }
                     }
-                }
 
-            // Load reminders
-            reminderRepository.getReminders()
-                .onSuccess { reminders ->
-                    _uiState.update { it.copy(upcomingReminders = reminders.take(3)) }
-                }
+                // Load reminders
+                reminderRepository.getReminders()
+                    .onSuccess { reminders ->
+                        _uiState.update { it.copy(upcomingReminders = reminders.take(3)) }
+                    }
 
-            _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load dashboard") }
+            }
         }
     }
 

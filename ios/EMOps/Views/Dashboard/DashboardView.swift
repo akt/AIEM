@@ -5,42 +5,81 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Greeting with week number
-                    greetingSection
-
-                    // Streak / Stats card
-                    WeekSummaryCard(
-                        dsaaStreak: viewModel.dsaaStreak,
-                        deepWorkHours: viewModel.dashboardData?.weeklyProgress.deepWorkHoursThisWeek ?? 0,
-                        deepWorkTarget: viewModel.dashboardData?.weeklyProgress.deepWorkHoursTarget ?? 20,
-                        habitsCompleted: viewModel.todayHabitsCompleted,
-                        habitsTotal: viewModel.todayHabitsTotal
-                    )
-
-                    // This Week's Focus
-                    if let sheet = viewModel.currentSheet {
-                        weekFocusCard(sheet: sheet)
+            Group {
+                if viewModel.isLoading && viewModel.dashboardData == nil {
+                    VStack {
+                        Spacer()
+                        ProgressView()
+                            .tint(Color(hex: 0x6C8CFF))
+                        Spacer()
                     }
-
-                    // Top 3 Outcomes
-                    if let sheet = viewModel.currentSheet, !sheet.outcomes.isEmpty {
-                        OutcomesCard(outcomes: Array(sheet.outcomes.prefix(3)))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x0F1117).ignoresSafeArea())
+                } else if let errorMessage = viewModel.errorMessage, viewModel.dashboardData == nil {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(Color(hex: 0xFFB84D))
+                        Text("Something went wrong")
+                            .font(.headline)
+                            .foregroundColor(Color(hex: 0xE8ECF4))
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundColor(Color(hex: 0x8B95A8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                        Button("Retry") {
+                            viewModel.retry()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color(hex: 0x6C8CFF))
+                        Spacer()
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x0F1117).ignoresSafeArea())
+                } else {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // Greeting with week number
+                            greetingSection
 
-                    // AI Coach
-                    if let note = viewModel.aiCoachingNote, !note.isEmpty {
-                        aiCoachCard(note: note)
+                            // Streak / Stats card
+                            WeekSummaryCard(
+                                dsaaStreak: viewModel.dsaaStreak,
+                                deepWorkHours: viewModel.dashboardData?.weeklyProgress.deepWorkHoursThisWeek ?? 0,
+                                deepWorkTarget: viewModel.dashboardData?.weeklyProgress.deepWorkHoursTarget ?? 20,
+                                habitsCompleted: viewModel.todayHabitsCompleted,
+                                habitsTotal: viewModel.todayHabitsTotal
+                            )
+
+                            // This Week's Focus
+                            if let sheet = viewModel.currentSheet {
+                                weekFocusCard(sheet: sheet)
+                            }
+
+                            // Top 3 Outcomes
+                            if let sheet = viewModel.currentSheet, !sheet.outcomes.isEmpty {
+                                OutcomesCard(outcomes: Array(sheet.outcomes.prefix(3)))
+                            }
+
+                            // AI Coach
+                            if let note = viewModel.aiCoachingNote, !note.isEmpty {
+                                aiCoachCard(note: note)
+                            }
+
+                            // Upcoming reminders
+                            if !viewModel.upcomingReminders.isEmpty {
+                                UpcomingCard(reminders: viewModel.upcomingReminders)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 24)
                     }
-
-                    // Upcoming reminders
-                    if !viewModel.upcomingReminders.isEmpty {
-                        UpcomingCard(reminders: viewModel.upcomingReminders)
+                    .refreshable {
+                        await viewModel.refreshData()
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
             }
             .background(Color(hex: 0x0F1117).ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -56,15 +95,6 @@ struct DashboardView: View {
                         Image(systemName: "gearshape")
                             .foregroundColor(Color(hex: 0x8B95A8))
                     }
-                }
-            }
-            .refreshable {
-                await viewModel.refreshData()
-            }
-            .overlay {
-                if viewModel.isLoading && viewModel.dashboardData == nil {
-                    ProgressView()
-                        .tint(Color(hex: 0x6C8CFF))
                 }
             }
         }

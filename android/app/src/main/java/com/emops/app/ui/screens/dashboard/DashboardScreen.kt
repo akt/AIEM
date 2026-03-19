@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -52,6 +53,60 @@ fun DashboardScreen(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = EMOps_Background)
         )
 
+        when {
+            uiState.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = EMOps_Primary)
+                }
+            }
+            uiState.error != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = EMOps_Surface)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                "Something went wrong",
+                                fontWeight = FontWeight.Bold,
+                                color = EMOps_Text,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                uiState.error,
+                                color = EMOps_TextSecondary,
+                                fontSize = 14.sp
+                            )
+                            Button(
+                                onClick = { viewModel.loadDashboard() },
+                                colors = ButtonDefaults.buttonColors(containerColor = EMOps_Primary)
+                            ) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Retry")
+                            }
+                        }
+                    }
+                }
+            }
+            else -> {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -247,5 +302,7 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+            } // end else
+        } // end when
     }
 }

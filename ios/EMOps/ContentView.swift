@@ -2,17 +2,25 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab: Int = 0
 
     var body: some View {
         Group {
             if authService.isAuthenticated {
-                mainView
+                if hasCompletedOnboarding {
+                    mainView
+                } else {
+                    OnboardingView { _ in
+                        hasCompletedOnboarding = true
+                    }
+                }
             } else {
                 LoginView()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: authService.isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: hasCompletedOnboarding)
     }
 
     // MARK: - Main Authenticated View

@@ -43,19 +43,23 @@ class HabitsViewModel @Inject constructor(
 
     fun loadHabits() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-            habitRepository.syncHabits()
-                .onSuccess { habits ->
-                    _uiState.update { it.copy(habits = habits) }
-                }
+            try {
+                habitRepository.syncHabits()
+                    .onSuccess { habits ->
+                        _uiState.update { it.copy(habits = habits) }
+                    }
 
-            habitRepository.syncLogs(_uiState.value.selectedDate)
-                .onSuccess { logs ->
-                    _uiState.update { it.copy(logs = logs) }
-                }
+                habitRepository.syncLogs(_uiState.value.selectedDate)
+                    .onSuccess { logs ->
+                        _uiState.update { it.copy(logs = logs) }
+                    }
 
-            _uiState.update { it.copy(isLoading = false) }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load habits") }
+            }
         }
     }
 
