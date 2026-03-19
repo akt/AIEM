@@ -46,7 +46,8 @@ app.use((req, _res, next) => { req.headers['x-request-id'] = req.headers['x-requ
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok',
+      version: '0.1.1', timestamp: new Date().toISOString() });
 });
 
 // API routes
